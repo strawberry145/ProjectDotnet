@@ -1,0 +1,73 @@
+@page "/"
+@page "/dashboard"
+@using ProjectIntelligence.Dtos
+@using ProjectIntelligence.Services
+@inject IDashboardService DashSvc
+
+<h3>Project Intelligence Dashboard</h3>
+
+<h4>Project Health</h4>
+<table class="table table-sm">
+    <thead>
+        <tr><th>Project</th><th>% Completed</th><th>Delayed</th><th>Health Score</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var h in health)
+        {
+            <tr>
+                <td>@h.ProjectName</td>
+                <td>@h.PercentageCompleted%</td>
+                <td>@h.DelayedTasks</td>
+                <td>@h.HealthScore</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>Member Performance</h4>
+<table class="table table-sm">
+    <thead>
+        <tr><th>Member</th><th>Assigned</th><th>Completed</th><th>Rate%</th><th>Delayed</th><th>Workload</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var p in performance)
+        {
+            <tr>
+                <td>@p.MemberName</td>
+                <td>@p.TotalAssigned</td>
+                <td>@p.Completed</td>
+                <td>@p.CompletionRate%</td>
+                <td>@p.DelayedTasks</td>
+                <td>@p.CurrentWorkload</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>Completed vs Pending per Project (Bar Chart)</h4>
+@foreach (var c in chartData)
+{
+    var total = Math.Max(1, c.Completed + c.Pending);
+    var completedWidth = (double)c.Completed / total * 100;
+    var pendingWidth = (double)c.Pending / total * 100;
+    <div>
+        <strong>@c.ProjectName</strong>
+        <div style="background:#ddd; border-radius:5px;">
+            <div style="background:#4caf50; width:@completedWidth%; display:inline-block; text-align:center;">✅ @c.Completed</div>
+            <div style="background:#ff9800; width:@pendingWidth%; display:inline-block; text-align:center;">⏳ @c.Pending</div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProjectHealthDto> health = new();
+    private List<MemberPerformanceDto> performance = new();
+    private List<ProjectChartDto> chartData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        health = await DashSvc.GetProjectHealthAsync();
+        performance = await DashSvc.GetMemberPerformanceAsync();
+        chartData = await DashSvc.GetProjectChartDataAsync();
+    }
+}

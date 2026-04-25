@@ -1,0 +1,50 @@
+@page "/projects"
+@using ProjectIntelligence.Models
+@using ProjectIntelligence.Services
+@inject IProjectService ProjectSvc
+
+<h3>Projects</h3>
+
+<div class="mb-3">
+    <input type="text" @bind="nameFilter" placeholder="Filter by name" />
+    <select @bind="statusFilter">
+        <option value="">All statuses</option>
+        @foreach (var s in Enum.GetValues<ProjectStatus>())
+        {
+            <option value="@s">@s</option>
+        }
+    </select>
+    <button class="btn btn-primary" @onclick="Load">Filter</button>
+</div>
+
+<table class="table">
+    <thead>
+        <tr><th>Name</th><th>Status</th><th>Start</th><th>End</th><th>Delayed?</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var p in projects)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.Status</td>
+                <td>@p.StartDate.ToShortDateString()</td>
+                <td>@p.EndDate.ToShortDateString()</td>
+                <td>@(p.IsDelayed ? "⚠️ Yes" : "No")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Project> projects = new();
+    private string? nameFilter;
+    private string? statusFilter;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        ProjectStatus? status = string.IsNullOrEmpty(statusFilter) ? null : Enum.Parse<ProjectStatus>(statusFilter);
+        projects = await ProjectSvc.GetAllAsync(nameFilter, status);
+    }
+}

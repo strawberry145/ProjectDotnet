@@ -1,0 +1,28 @@
+@page "/members"
+@using ProjectIntelligence.Models
+@using ProjectIntelligence.Services
+@inject IMemberService MemberSvc
+
+<h3>Members</h3>
+
+<table class="table">
+    <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var m in members)
+        {
+            <tr>
+                <td>@m.Name</td>
+                <td>@m.Email</td>
+                <td>@m.Role</td>
+                <td>@m.JoinDate.ToShortDateString()</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Member> members = new();
+    protected override async Task OnInitializedAsync() => members = await MemberSvc.GetAllAsync();
+}

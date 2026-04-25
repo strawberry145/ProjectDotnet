@@ -1,0 +1,96 @@
+@page "/tasks"
+@using ProjectIntelligence.Models
+@using ProjectIntelligence.Services
+@using TaskStatus = ProjectIntelligence.Models.TaskStatus
+@inject ITaskService TaskSvc
+@inject IProjectService ProjectSvc
+@inject IMemberService MemberSvc
+
+<h3>Tasks</h3>
+
+<div class="row">
+    <div class="col-md-3">
+        <label>Project</label>
+        <select @bind="projectId">
+            <option value="">All projects</option>
+            @foreach (var p in projectList)
+            {
+                <option value="@p.Id">@p.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Status</label>
+        <select @bind="status">
+            <option value="">All statuses</option>
+            @foreach (var s in Enum.GetValues<TaskStatus>())
+            {
+                <option value="@s">@s</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Member</label>
+        <select @bind="memberId">
+            <option value="">All members</option>
+            @foreach (var m in memberList)
+            {
+                <option value="@m.Id">@m.Name</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Due from</label>
+        <input type="date" @bind="fromDate" @bind:format="yyyy-MM-dd" />
+        <label>Due to</label>
+        <input type="date" @bind="toDate" @bind:format="yyyy-MM-dd" />
+    </div>
+</div>
+<button class="btn btn-primary mt-2" @onclick="Load">Filter</button>
+
+<table class="table mt-3">
+    <thead>
+        <tr><th>Title</th><th>Project</th><th>Member</th><th>Due</th><th>Status</th><th>Delayed?</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var t in tasks)
+        {
+            <tr>
+                <td>@t.Title</td>
+                <td>@t.Project?.Name</td>
+                <td>@t.AssignedMember?.Name</td>
+                <td>@t.DueDate.ToShortDateString()</td>
+                <td>@t.Status</td>
+                <td>@(t.IsDelayed ? "⚠️ Yes" : "")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<ProjectTask> tasks = new();
+    private List<Project> projectList = new();
+    private List<Member> memberList = new();
+    private string? projectId;
+    private string? status;
+    private string? memberId;
+    private DateTime? fromDate;
+    private DateTime? toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        projectList = await ProjectSvc.GetAllAsync(null, null);
+        memberList = await MemberSvc.GetAllAsync();
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        int? pid = string.IsNullOrEmpty(projectId) ? null : int.Parse(projectId);
+        int? mid = string.IsNullOrEmpty(memberId) ? null : int.Parse(memberId);
+        ProjectIntelligence.Models.TaskStatus? st = string.IsNullOrEmpty(status)
+            ? null
+            : Enum.Parse<ProjectIntelligence.Models.TaskStatus>(status);
+        tasks = await TaskSvc.GetAllAsync(pid, st, mid, fromDate, toDate);
+    }
+}
