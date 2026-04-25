@@ -8,10 +8,77 @@
 
 <h3>Tasks</h3>
 
-<div class="row">
-    <div class="col-md-3">
-        <label>Project</label>
-        <select @bind="projectId">
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>@(currentTask.Id == 0 ? "Add New Task" : "Edit Task")</h5>
+        <EditForm Model="currentTask" OnValidSubmit="HandleSubmit" FormName="TaskForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Title</label>
+                    <InputText @bind-Value="currentTask.Title" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Project</label>
+                    <InputSelect @bind-Value="currentTask.ProjectId" class="form-select">
+                        <option value="0">Select Project...</option>
+                        @foreach (var p in projectList)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Assigned Member</label>
+                    <InputSelect @bind-Value="currentTask.AssignedMemberId" class="form-select">
+                        <option value="">None</option>
+                        @foreach (var m in memberList)
+                        {
+                            <option value="@m.Id">@m.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Due Date</label>
+                    <InputDate @bind-Value="currentTask.DueDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <InputSelect @bind-Value="currentTask.Status" class="form-select" @onchange="OnStatusChange">
+                        @foreach (var s in Enum.GetValues<TaskStatus>())
+                        {
+                            <option value="@s">@s</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <InputCheckbox @bind-Value="currentTask.IsCompleted" class="form-check-input" id="isCompleted" />
+                        <label class="form-check-label" for="isCompleted">Mark as Completed</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Description</label>
+                    <InputText @bind-Value="currentTask.Description" class="form-control" />
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-success">Save Task</button>
+                    @if (currentTask.Id != 0)
+                    {
+                        <button type="button" class="btn btn-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+                    }
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+<div class="row g-3 mb-3 align-items-end">
+    <div class="col-md-2">
+        <label class="form-label small">Project</label>
+        <select @bind="projectId" class="form-select form-select-sm">
             <option value="">All projects</option>
             @foreach (var p in projectList)
             {
@@ -19,9 +86,9 @@
             }
         </select>
     </div>
-    <div class="col-md-3">
-        <label>Status</label>
-        <select @bind="status">
+    <div class="col-md-2">
+        <label class="form-label small">Status</label>
+        <select @bind="status" class="form-select form-select-sm">
             <option value="">All statuses</option>
             @foreach (var s in Enum.GetValues<TaskStatus>())
             {
@@ -29,9 +96,9 @@
             }
         </select>
     </div>
-    <div class="col-md-3">
-        <label>Member</label>
-        <select @bind="memberId">
+    <div class="col-md-2">
+        <label class="form-label small">Member</label>
+        <select @bind="memberId" class="form-select form-select-sm">
             <option value="">All members</option>
             @foreach (var m in memberList)
             {
@@ -39,18 +106,30 @@
             }
         </select>
     </div>
-    <div class="col-md-3">
-        <label>Due from</label>
-        <input type="date" @bind="fromDate" @bind:format="yyyy-MM-dd" />
-        <label>Due to</label>
-        <input type="date" @bind="toDate" @bind:format="yyyy-MM-dd" />
+    <div class="col-md-2">
+        <label class="form-label small">Due From</label>
+        <input type="date" @bind="fromDate" class="form-control form-control-sm" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small">Due To</label>
+        <input type="date" @bind="toDate" class="form-control form-control-sm" />
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100" @onclick="Load">Filter</button>
     </div>
 </div>
-<button class="btn btn-primary mt-2" @onclick="Load">Filter</button>
 
-<table class="table mt-3">
-    <thead>
-        <tr><th>Title</th><th>Project</th><th>Member</th><th>Due</th><th>Status</th><th>Delayed?</th></tr>
+<table class="table table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Title</th>
+            <th>Project</th>
+            <th>Member</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th>Delayed?</th>
+            <th>Actions</th>
+        </tr>
     </thead>
     <tbody>
         @foreach (var t in tasks)
@@ -60,8 +139,21 @@
                 <td>@t.Project?.Name</td>
                 <td>@t.AssignedMember?.Name</td>
                 <td>@t.DueDate.ToShortDateString()</td>
-                <td>@t.Status</td>
-                <td>@(t.IsDelayed ? "⚠️ Yes" : "")</td>
+                <td>
+                    <span class="badge @(t.Status == TaskStatus.Completed ? "bg-success" : t.Status == TaskStatus.InProgress ? "bg-info" : "bg-warning")">
+                        @t.Status
+                    </span>
+                </td>
+                <td>
+                    @if (t.IsDelayed)
+                    {
+                        <span class="badge bg-danger">⚠️ Yes</span>
+                    }
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditTask(t)">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => DeleteTask(t.Id)">Delete</button>
+                </td>
             </tr>
         }
     </tbody>
@@ -71,6 +163,10 @@
     private List<ProjectTask> tasks = new();
     private List<Project> projectList = new();
     private List<Member> memberList = new();
+    
+    [SupplyParameterFromForm(FormName = "TaskForm")]
+    private ProjectTask currentTask { get; set; } = new() { DueDate = DateTime.Today.AddDays(7) };
+
     private string? projectId;
     private string? status;
     private string? memberId;
@@ -88,9 +184,55 @@
     {
         int? pid = string.IsNullOrEmpty(projectId) ? null : int.Parse(projectId);
         int? mid = string.IsNullOrEmpty(memberId) ? null : int.Parse(memberId);
-        ProjectIntelligence.Models.TaskStatus? st = string.IsNullOrEmpty(status)
-            ? null
-            : Enum.Parse<ProjectIntelligence.Models.TaskStatus>(status);
+        TaskStatus? st = string.IsNullOrEmpty(status) ? null : Enum.Parse<TaskStatus>(status);
         tasks = await TaskSvc.GetAllAsync(pid, st, mid, fromDate, toDate);
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (currentTask.ProjectId == 0) return;
+
+        // Auto-update IsCompleted based on Status if it's Completed
+        if (currentTask.Status == TaskStatus.Completed) currentTask.IsCompleted = true;
+
+        if (currentTask.Id == 0)
+            await TaskSvc.CreateAsync(currentTask);
+        else
+            await TaskSvc.UpdateAsync(currentTask);
+
+        currentTask = new() { DueDate = DateTime.Today.AddDays(7) };
+        await Load();
+    }
+
+    private void OnStatusChange(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() == TaskStatus.Completed.ToString())
+            currentTask.IsCompleted = true;
+    }
+
+    private void EditTask(ProjectTask t)
+    {
+        currentTask = new ProjectTask
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Description = t.Description,
+            DueDate = t.DueDate,
+            IsCompleted = t.IsCompleted,
+            Status = t.Status,
+            ProjectId = t.ProjectId,
+            AssignedMemberId = t.AssignedMemberId
+        };
+    }
+
+    private void CancelEdit()
+    {
+        currentTask = new() { DueDate = DateTime.Today.AddDays(7) };
+    }
+
+    private async Task DeleteTask(int id)
+    {
+        if (await TaskSvc.DeleteAsync(id))
+            await Load();
     }
 }

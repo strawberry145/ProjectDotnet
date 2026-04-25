@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using ProjectIntelligence.Data;
 using ProjectIntelligence.Services;
@@ -22,12 +23,18 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 
-// Create database and seed data
+// Create database
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await db.Database.EnsureCreatedAsync();   // recreate full schema
-    await DbSeeder.SeedAsync(db);
+    
+    // Seed only if --seed is passed in terminal
+    if (args.Contains("--seed"))
+    {
+        await DbSeeder.SeedAsync(db);
+        Console.WriteLine("Database seeded successfully!");
+    }
 }
 
 if (!app.Environment.IsDevelopment())

@@ -19,7 +19,9 @@ public class DashboardService : IDashboardService
             var completed = p.Tasks.Count(t => t.IsCompleted);
             var delayed = p.Tasks.Count(t => !t.IsCompleted && t.DueDate.Date < today);
             var pct = total == 0 ? 0 : (double)completed / total * 100;
-            var score = Math.Clamp(pct * 0.6 - delayed * 0.1, 0, 100);
+            var onTimeRate = total == 0 ? 100 : (double)(total - delayed) / total * 100;
+            var score = total == 0 ? 0 : (pct * 0.7) + (onTimeRate * 0.3);
+            
             return new ProjectHealthDto
             {
                 ProjectId = p.Id,
@@ -28,7 +30,7 @@ public class DashboardService : IDashboardService
                 CompletedTasks = completed,
                 DelayedTasks = delayed,
                 PercentageCompleted = Math.Round(pct, 2),
-                HealthScore = Math.Round(score, 2)
+                HealthScore = Math.Round(score, 1)
             };
         }).ToList();
     }

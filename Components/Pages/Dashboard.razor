@@ -4,60 +4,143 @@
 @using ProjectIntelligence.Services
 @inject IDashboardService DashSvc
 
-<h3>Project Intelligence Dashboard</h3>
+<div class="container-fluid">
+    <h3 class="mb-4">Project Intelligence Dashboard</h3>
 
-<h4>Project Health</h4>
-<table class="table table-sm">
-    <thead>
-        <tr><th>Project</th><th>% Completed</th><th>Delayed</th><th>Health Score</th></tr>
-    </thead>
-    <tbody>
-        @foreach (var h in health)
-        {
-            <tr>
-                <td>@h.ProjectName</td>
-                <td>@h.PercentageCompleted%</td>
-                <td>@h.DelayedTasks</td>
-                <td>@h.HealthScore</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<h4>Member Performance</h4>
-<table class="table table-sm">
-    <thead>
-        <tr><th>Member</th><th>Assigned</th><th>Completed</th><th>Rate%</th><th>Delayed</th><th>Workload</th></tr>
-    </thead>
-    <tbody>
-        @foreach (var p in performance)
-        {
-            <tr>
-                <td>@p.MemberName</td>
-                <td>@p.TotalAssigned</td>
-                <td>@p.Completed</td>
-                <td>@p.CompletionRate%</td>
-                <td>@p.DelayedTasks</td>
-                <td>@p.CurrentWorkload</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<h4>Completed vs Pending per Project (Bar Chart)</h4>
-@foreach (var c in chartData)
-{
-    var total = Math.Max(1, c.Completed + c.Pending);
-    var completedWidth = (double)c.Completed / total * 100;
-    var pendingWidth = (double)c.Pending / total * 100;
-    <div>
-        <strong>@c.ProjectName</strong>
-        <div style="background:#ddd; border-radius:5px;">
-            <div style="background:#4caf50; width:@completedWidth%; display:inline-block; text-align:center;">✅ @c.Completed</div>
-            <div style="background:#ff9800; width:@pendingWidth%; display:inline-block; text-align:center;">⏳ @c.Pending</div>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Project Health</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>% Completed</th>
+                                <th>Delayed Tasks</th>
+                                <th>Health Score</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var h in health)
+                            {
+                                <tr>
+                                    <td><strong>@h.ProjectName</strong></td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: @h.PercentageCompleted%" aria-valuenow="@h.PercentageCompleted" aria-valuemin="0" aria-valuemax="100">
+                                                @h.PercentageCompleted%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (h.DelayedTasks > 0)
+                                        {
+                                            <span class="badge bg-danger">@h.DelayedTasks Delayed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">On Track</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="h5 mb-0 @(h.HealthScore >= 80 ? "text-success" : h.HealthScore >= 50 ? "text-warning" : "text-danger")">
+                                            @h.HealthScore
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (h.HealthScore >= 80) { <span class="badge bg-success">Excellent</span> }
+                                        else if (h.HealthScore >= 50) { <span class="badge bg-warning text-dark">Warning</span> }
+                                        else { <span class="badge bg-danger">In Danger</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-}
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Member Performance</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Assigned</th>
+                                <th>Done</th>
+                                <th>Rate%</th>
+                                <th>Delayed</th>
+                                <th>Workload</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in performance)
+                            {
+                                <tr>
+                                    <td>@p.MemberName</td>
+                                    <td>@p.TotalAssigned</td>
+                                    <td>@p.Completed</td>
+                                    <td>@p.CompletionRate%</td>
+                                    <td><span class="@(p.DelayedTasks > 0 ? "text-danger fw-bold" : "")">@p.DelayedTasks</span></td>
+                                    <td>
+                                        <span class="badge @(p.CurrentWorkload > 5 ? "bg-danger" : p.CurrentWorkload > 3 ? "bg-warning text-dark" : "bg-info")">
+                                            @p.CurrentWorkload
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Project Progress</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var c in chartData)
+                    {
+                        var total = Math.Max(1, c.Completed + c.Pending);
+                        var completedWidth = (double)c.Completed / total * 100;
+                        var pendingWidth = (double)c.Pending / total * 100;
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="small fw-bold">@c.ProjectName</span>
+                                <span class="small text-muted">@c.Completed / @(c.Completed + c.Pending)</span>
+                            </div>
+                            <div class="progress" style="height: 12px;">
+                                <div class="progress-bar bg-success" style="width: @completedWidth%"></div>
+                                <div class="progress-bar bg-warning" style="width: @pendingWidth%"></div>
+                            </div>
+                        </div>
+                    }
+                    <div class="mt-4 pt-2 border-top">
+                        <div class="d-flex align-items-center mb-1">
+                            <div style="width:12px; height:12px; background:#198754; margin-right:8px; border-radius:2px;"></div>
+                            <span class="small">Completed Tasks</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div style="width:12px; height:12px; background:#ffc107; margin-right:8px; border-radius:2px;"></div>
+                            <span class="small">Pending Tasks</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
     private List<ProjectHealthDto> health = new();

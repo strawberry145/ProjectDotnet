@@ -5,9 +5,51 @@
 
 <h3>Members</h3>
 
-<table class="table">
-    <thead>
-        <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>@(currentMember.Id == 0 ? "Add New Member" : "Edit Member")</h5>
+        <EditForm Model="currentMember" OnValidSubmit="HandleSubmit" FormName="MemberForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Name</label>
+                    <InputText @bind-Value="currentMember.Name" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <InputText @bind-Value="currentMember.Email" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Role</label>
+                    <InputText @bind-Value="currentMember.Role" class="form-control" placeholder="e.g. Lead, Dev, Designer" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Join Date</label>
+                    <InputDate @bind-Value="currentMember.JoinDate" class="form-control" />
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="submit" class="btn btn-success">Save Member</button>
+                    @if (currentMember.Id != 0)
+                    {
+                        <button type="button" class="btn btn-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+                    }
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+<table class="table table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Joined</th>
+            <th>Actions</th>
+        </tr>
     </thead>
     <tbody>
         @foreach (var m in members)
@@ -17,6 +59,10 @@
                 <td>@m.Email</td>
                 <td>@m.Role</td>
                 <td>@m.JoinDate.ToShortDateString()</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMember(m)">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => DeleteMember(m.Id)">Delete</button>
+                </td>
             </tr>
         }
     </tbody>
@@ -24,5 +70,47 @@
 
 @code {
     private List<Member> members = new();
-    protected override async Task OnInitializedAsync() => members = await MemberSvc.GetAllAsync();
+    [SupplyParameterFromForm(FormName = "MemberForm")]
+    private Member currentMember { get; set; } = new() { JoinDate = DateTime.Today };
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        members = await MemberSvc.GetAllAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (currentMember.Id == 0)
+            await MemberSvc.CreateAsync(currentMember);
+        else
+            await MemberSvc.UpdateAsync(currentMember);
+
+        currentMember = new() { JoinDate = DateTime.Today };
+        await Load();
+    }
+
+    private void EditMember(Member m)
+    {
+        currentMember = new Member
+        {
+            Id = m.Id,
+            Name = m.Name,
+            Email = m.Email,
+            Role = m.Role,
+            JoinDate = m.JoinDate
+        };
+    }
+
+    private void CancelEdit()
+    {
+        currentMember = new() { JoinDate = DateTime.Today };
+    }
+
+    private async Task DeleteMember(int id)
+    {
+        if (await MemberSvc.DeleteAsync(id))
+            await Load();
+    }
 }
