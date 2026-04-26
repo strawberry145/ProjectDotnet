@@ -1,4 +1,5 @@
 @page "/members"
+@rendermode InteractiveServer
 @using ProjectIntelligence.Models
 @using ProjectIntelligence.Services
 @inject IMemberService MemberSvc
@@ -8,7 +9,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <h5>@(currentMember.Id == 0 ? "Add New Member" : "Edit Member")</h5>
-        <EditForm Model="currentMember" OnValidSubmit="HandleSubmit" FormName="MemberForm">
+        <EditForm Model="currentMember" OnValidSubmit="HandleSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
@@ -70,7 +71,6 @@
 
 @code {
     private List<Member> members = new();
-    [SupplyParameterFromForm(FormName = "MemberForm")]
     private Member currentMember { get; set; } = new() { JoinDate = DateTime.Today };
 
     protected override async Task OnInitializedAsync() => await Load();

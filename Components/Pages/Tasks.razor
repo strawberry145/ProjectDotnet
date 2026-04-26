@@ -1,4 +1,5 @@
 @page "/tasks"
+@rendermode InteractiveServer
 @using ProjectIntelligence.Models
 @using ProjectIntelligence.Services
 @using TaskStatus = ProjectIntelligence.Models.TaskStatus
@@ -11,7 +12,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <h5>@(currentTask.Id == 0 ? "Add New Task" : "Edit Task")</h5>
-        <EditForm Model="currentTask" OnValidSubmit="HandleSubmit" FormName="TaskForm">
+        <EditForm Model="currentTask" OnValidSubmit="HandleSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
@@ -46,7 +47,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Status</label>
-                    <InputSelect @bind-Value="currentTask.Status" class="form-select" @onchange="OnStatusChange">
+                    <InputSelect @bind-Value="currentTask.Status" class="form-select" @bind-Value:after="OnStatusChange">
                         @foreach (var s in Enum.GetValues<TaskStatus>())
                         {
                             <option value="@s">@s</option>
@@ -164,7 +165,6 @@
     private List<Project> projectList = new();
     private List<Member> memberList = new();
     
-    [SupplyParameterFromForm(FormName = "TaskForm")]
     private ProjectTask currentTask { get; set; } = new() { DueDate = DateTime.Today.AddDays(7) };
 
     private string? projectId;
@@ -204,9 +204,9 @@
         await Load();
     }
 
-    private void OnStatusChange(ChangeEventArgs e)
+    private void OnStatusChange()
     {
-        if (e.Value?.ToString() == TaskStatus.Completed.ToString())
+        if (currentTask.Status == TaskStatus.Completed)
             currentTask.IsCompleted = true;
     }
 

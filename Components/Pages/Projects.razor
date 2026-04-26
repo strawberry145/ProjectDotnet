@@ -1,4 +1,5 @@
 @page "/projects"
+@rendermode InteractiveServer
 @using ProjectIntelligence.Models
 @using ProjectIntelligence.Services
 @inject IProjectService ProjectSvc
@@ -8,7 +9,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <h5>@(currentProject.Id == 0 ? "Add New Project" : "Edit Project")</h5>
-        <EditForm Model="currentProject" OnValidSubmit="HandleSubmit" FormName="ProjectForm">
+        <EditForm Model="currentProject" OnValidSubmit="HandleSubmit">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
@@ -104,7 +105,6 @@
     private List<Project> projects = new();
     private string? nameFilter;
     private string? statusFilter;
-    [SupplyParameterFromForm(FormName = "ProjectForm")]
     private Project currentProject { get; set; } = new() { StartDate = DateTime.Today, EndDate = DateTime.Today.AddMonths(1) };
 
     protected override async Task OnInitializedAsync() => await Load();
